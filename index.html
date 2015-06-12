@@ -103,7 +103,7 @@ $(".not-correct").on("click",function(){
 // }
 
 
-	var ws = new WebSocket('ws://localhost:8080');
+	var ws = new WebSocket('ws://wideweb.services:3131');
       ws.onmessage = function (event) {
         var rawData = JSON.parse(event.data);
         // console.log(rawData);
