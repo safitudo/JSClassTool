@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html style="height:100%">
+<head>
+<script src="cm/codemirror.js" ></script>
+<link rel="stylesheet" type="text/css" href="cm/codemirror.css" />
+	<title>Student Console</title>
+</head>
+<body style="height:100%">
+
+
+<div style="width:100%;height:100%" id="cm">
+	
+</div>
+
+<button style="position:fixed;z-index:100000;top:30px;right:30px;background:#fefefe;border:0;padding:10px 30px;cursor:pointer;" onclick="run()">RUN</button>
+
+<button id="readyButton" style="position:fixed;z-index:100000;bottom:30px;right:30px;background:#fefefe;border:0;padding:10px 30px;cursor:pointer;" onclick="ready()">READY</button>
+
+<span id="resultPositive" style="display:none;position:fixed;z-index:100000;bottom:30px;left:50px;color:#cecece;font-size:20px;color:#22fe22">Good job!</span>
+
+<span id="resultNegative" style="display:none;position:fixed;z-index:100000;bottom:30px;left:50px;color:#cecece;font-size:20px;color:#fe2222">Try again.</span>
+
+
+<script type="text/javascript">
+
+  var readyState = 0;
+
+  function run(){
+    var text = myCodeMirror.getValue();
+    $("#resultNegative").hide();
+    $("#resultPositive").hide();
+    $("#readyButton").show();
+    eval(text);
+  }	
+
+  function ready(){
+    $("#readyButton").hide();
+    $("#resultNegative").hide();
+    $("#resultPositive").hide();
+    readyState = 1;
+    updateData(1);
+  }
+
+  function updateData(state){
+    var text = myCodeMirror.getValue();
+    localStorage.text = text;
+    var data = {
+      type: "student",
+      name: window.name,
+      data: text,
+      state: state
+    };
+    var sendingData = JSON.stringify(data);
+    ws.send(sendingData);
+  }
+
+	var name = localStorage.name || prompt("What is your name?");
+  if (!localStorage.name)
+    localStorage.name = name;
+
+  
+  var myCodeMirror = CodeMirror(document.getElementById('cm'),{
+    value: localStorage.text || "//Hello, "+name+"\n",
+    mode:  "javascript",
+    theme: "ambiance",
+    lineNumbers: true,
+    viewportMargin: Infinity
+  });
+  
+  myCodeMirror.on("keyup",function(event){
+    updateData(readyState);
+  });
+
+
+  var ws = new WebSocket('ws://localhost:8080');
+  
+  ws.onmessage = function (event) {
+    var data = JSON.parse(event.data);
+    // console.log(data);
+    if (data.type=="update"){
+      myCodeMirror.setValue(data.data);
+    }
+
+    if (data.type=="correct"){
+      $("#resultPositive").show();
+    }
+
+    if (data.type=="not-correct"){
+      $("#resultNegative").show();
+    }
+
+    if (data.type=="reset"){
+      $("#resultPositive").hide();
+      $("#resultNegative").hide();
+      $("#readyButton").show();
+
+    }
+  };
+
+  ws.onopen = function(event){
+    updateData(readyState);
+  }
+
+
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html style="height:100%">
+<head>
+	<script src="cm/codemirror.js" ></script>
+	<link rel="stylesheet" type="text/css" href="cm/codemirror.css" />
+	<title>CLass Dashboard</title>
+	<style type="text/css">
+	.cm-entity{
+		width:24%;height:45%;
+		margin: 0.2%;
+		float: left;
+	}
+
+	</style>
+</head>
+<body style="height:100%;">
+
+
+<script type="text/javascript">
+
+
+//STATES 0 - working; 1 - rewiew; 2 - done
+
+var cmSet = [];
+var students = {};
+var index = 1;
+
+for (var i=0;i<=7;i++){
+	$("body").append("<div id='cm"+i.toString()+"' val='"+i.toString()+"' class='cm-entity'></div>");
+	$("#cm"+i.toString()).append("<div style='position:relative;height:30px'><span style='cursor:pointer;font-size:18px;' id='sname"+i.toString()+"' class='sname'></span><span class='correcting' style='position:absolute;display:none;right:0;top:0'><button class='correct'>Correct</button>&nbsp;<button class='not-correct'>Not Correct</button></span><span class='resetting' style='position:absolute;display:none;right:0;top:0'><button class='reset'>Reset</button></span></div>");
+}
+
+for (var i=0;i<=7;i++){
+
+	cmSet.push(CodeMirror(document.getElementById('cm'+i.toString()),{
+	    value: "",
+	    _i: i,
+	    mode:  "javascript",
+	    theme: "ambiance",
+	    lineNumbers: true,
+	    viewportMargin: Infinity
+	 }));
+
+	cmSet[i].on("keyup",function(e){
+		// console.log(e);
+		var text = e.getValue();
+		ws.send(JSON.stringify({
+			type: "teacher",
+			action: "update",
+			student: $("#sname"+e.options._i.toString()).html(),
+			data: text
+		}))
+	})
+
+}
+
+$(".sname").on("click",function(){
+	var i = $(this).closest(".cm-entity").attr("val");
+	var e = cmSet[parseInt(i)].getValue();
+	eval(e);
+});
+
+$(".correct").on("click",function(){
+	$(this).closest(".correcting").hide();
+	var i = $(this).closest(".cm-entity").attr("val");
+	$("#sname"+i).css("color","green");
+	$(this).closest(".cm-entity").find(".resetting").show();
+	// console.log("#sname"+i)
+	ws.send(JSON.stringify({
+		type: "teacher",
+		action: "correct",
+		student: $("#sname"+i).html()
+	}))
+});
+
+
+$(".reset").on("click",function(){
+
+	var i = $(this).closest(".cm-entity").attr("val");
+	$("#sname"+i).css("color","black");
+	$(this).closest(".cm-entity").find(".resetting").hide();
+	ws.send(JSON.stringify({
+		type: "teacher",
+		action: "reset",
+		student: $("#sname"+i).html()
+	}))
+});
+
+$(".not-correct").on("click",function(){
+	$(this).closest(".correcting").hide();
+	var i = $(this).closest(".cm-entity").attr("val");
+	// console.log("#sname"+i)
+	ws.send(JSON.stringify({
+		type: "teacher",
+		action: "not-correct",
+		student: $("#sname"+i).html()
+	}))
+});
+
+
+// for (var i=0;i<=7;i++){
+
+// }
+
+
+	var ws = new WebSocket('ws://localhost:8080');
+      ws.onmessage = function (event) {
+        var rawData = JSON.parse(event.data);
+        // console.log(rawData);
+        // console.log(students);	
+        if (rawData.type == "update"){
+        	var data = rawData.data;
+	        for (var i in data){
+	        	if (!students[i]){
+	        		students[i] = index;
+	        		index++;
+	        	}
+	        	$("#sname"+(students[i]-1).toString()).html(i.toString());
+	        	cmSet[students[i]-1].setValue(data[i].data);
+	        	if (data[i].state){
+	        		$("#cm"+(students[i]-1).toString()).find(".correcting").show();
+	        	} else {
+	        		$("#cm"+(students[i]-1).toString()).find(".correcting").hide();
+	        	}
+	        }
+        }
+      };
+      ws.onopen = function(event){
+      	ws.send('{ "type": "teacher" }');
+      }
+
+</script>
+
+
+</body>
+</html>
