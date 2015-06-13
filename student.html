@@ -51,7 +51,7 @@
       state: state
     };
     var sendingData = JSON.stringify(data);
-    ws.send(sendingData);
+    window.ws.send(sendingData);
   }
 
 	var name = localStorage.name || prompt("What is your name?");
@@ -71,35 +71,46 @@
     updateData(readyState);
   });
 
-
-  var ws = new WebSocket('ws://wideweb.services:3131');
   
-  ws.onmessage = function (event) {
-    var data = JSON.parse(event.data);
-    // console.log(data);
-    if (data.type=="update"){
-      myCodeMirror.setValue(data.data);
+
+  function reconnect(){
+    window.ws = new WebSocket('ws://'+window.location.host+':3131');
+  
+    window.ws.onmessage = function (event) {
+      var data = JSON.parse(event.data);
+      // console.log(data);
+      if (data.type=="update"){
+        myCodeMirror.setValue(data.data);
+      }
+
+      if (data.type=="correct"){
+        $("#resultPositive").show();
+      }
+
+      if (data.type=="not-correct"){
+        $("#resultNegative").show();
+      }
+
+      if (data.type=="reset"){
+        $("#resultPositive").hide();
+        $("#resultNegative").hide();
+        $("#readyButton").show();
+
+      }
+    };
+
+    window.ws.onopen = function(event){
+      updateData(readyState);
     }
+    window.ws.onclose = function(event){
+        setTimeout('reconnect();',1000);
+      }
 
-    if (data.type=="correct"){
-      $("#resultPositive").show();
-    }
-
-    if (data.type=="not-correct"){
-      $("#resultNegative").show();
-    }
-
-    if (data.type=="reset"){
-      $("#resultPositive").hide();
-      $("#resultNegative").hide();
-      $("#readyButton").show();
-
-    }
-  };
-
-  ws.onopen = function(event){
-    updateData(readyState);
   }
+
+reconnect();
+
+  
 
 
 </script>

@@ -44,7 +44,7 @@ for (var i=0;i<=7;i++){
 	cmSet[i].on("keyup",function(e){
 		// console.log(e);
 		var text = e.getValue();
-		ws.send(JSON.stringify({
+		window.ws.send(JSON.stringify({
 			type: "teacher",
 			action: "update",
 			student: $("#sname"+e.options._i.toString()).html(),
@@ -66,7 +66,7 @@ $(".correct").on("click",function(){
 	$("#sname"+i).css("color","green");
 	$(this).closest(".cm-entity").find(".resetting").show();
 	// console.log("#sname"+i)
-	ws.send(JSON.stringify({
+	window.ws.send(JSON.stringify({
 		type: "teacher",
 		action: "correct",
 		student: $("#sname"+i).html()
@@ -79,7 +79,7 @@ $(".reset").on("click",function(){
 	var i = $(this).closest(".cm-entity").attr("val");
 	$("#sname"+i).css("color","black");
 	$(this).closest(".cm-entity").find(".resetting").hide();
-	ws.send(JSON.stringify({
+	window.ws.send(JSON.stringify({
 		type: "teacher",
 		action: "reset",
 		student: $("#sname"+i).html()
@@ -90,7 +90,7 @@ $(".not-correct").on("click",function(){
 	$(this).closest(".correcting").hide();
 	var i = $(this).closest(".cm-entity").attr("val");
 	// console.log("#sname"+i)
-	ws.send(JSON.stringify({
+	window.ws.send(JSON.stringify({
 		type: "teacher",
 		action: "not-correct",
 		student: $("#sname"+i).html()
@@ -102,9 +102,9 @@ $(".not-correct").on("click",function(){
 
 // }
 
-
-	var ws = new WebSocket('ws://wideweb.services:3131');
-      ws.onmessage = function (event) {
+function reconnect(){
+	window.ws = new WebSocket('ws://'+window.location.host+':3131');
+      window.ws.onmessage = function (event) {
         var rawData = JSON.parse(event.data);
         // console.log(rawData);
         // console.log(students);	
@@ -125,9 +125,18 @@ $(".not-correct").on("click",function(){
 	        }
         }
       };
-      ws.onopen = function(event){
-      	ws.send('{ "type": "teacher" }');
+      window.ws.onopen = function(event){
+      	window.ws.send('{ "type": "teacher" }');
       }
+      window.ws.onclose = function(event){
+      	setTimeout('reconnect();',1000);
+      }
+}
+
+var ws;
+
+reconnect();
+	 
 
 </script>
 
