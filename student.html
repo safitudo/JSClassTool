@@ -85,17 +85,19 @@
 
       if (data.type=="correct"){
         $("#resultPositive").show();
+        readyState= 0;
       }
 
       if (data.type=="not-correct"){
         $("#resultNegative").show();
+        readyState= 0;
       }
 
       if (data.type=="reset"){
         $("#resultPositive").hide();
         $("#resultNegative").hide();
         $("#readyButton").show();
-
+        readyState= 0;
       }
     };
 
